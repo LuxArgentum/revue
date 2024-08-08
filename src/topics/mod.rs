@@ -1,1 +1,1 @@
-mod review_topics;
+pub(crate) mod review_topics;
