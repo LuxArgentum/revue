@@ -9,7 +9,7 @@ enum NextReviewGap {
     Month,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ReviewTopic {
     pub topic_name: String,
     last_reviewed: DateTime<Utc>,
@@ -25,7 +25,7 @@ impl ReviewTopic {
         }
     }
 
-    fn review(mut self) -> Self {
+    pub fn review(mut self) -> Self {
         match self.next_review_gap {
             NextReviewGap::Day => self.next_review_gap = NextReviewGap::Week,
             NextReviewGap::Week => self.next_review_gap = NextReviewGap::Month,
@@ -36,7 +36,7 @@ impl ReviewTopic {
         self
     }
 
-    fn is_time_to_review(&self) -> bool {
+    pub fn is_time_to_review(&self) -> bool {
         let current_time = Utc::now();
         let last_reviewed_time = self.last_reviewed;
         let delta_days = current_time
