@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Days, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -12,7 +12,7 @@ enum NextReviewGap {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ReviewTopic {
     pub topic_name: String,
-    last_reviewed: DateTime<Utc>,
+    pub last_reviewed: DateTime<Utc>,
     next_review_gap: NextReviewGap,
 }
 
@@ -25,15 +25,13 @@ impl ReviewTopic {
         }
     }
 
-    pub fn review(mut self) -> Self {
+    pub fn review(&mut self) {
         match self.next_review_gap {
             NextReviewGap::Day => self.next_review_gap = NextReviewGap::Week,
             NextReviewGap::Week => self.next_review_gap = NextReviewGap::Month,
             NextReviewGap::Month => {}
         }
         self.last_reviewed = Utc::now();
-
-        self
     }
 
     pub fn is_time_to_review(&self) -> bool {
@@ -49,11 +47,32 @@ impl ReviewTopic {
             NextReviewGap::Month => delta_days >= 30,
         }
     }
+
+    #[allow(dead_code)]
+    pub fn add_days(&mut self, num: u64) {
+        match self.last_reviewed.checked_add_days(Days::new(num)) {
+            None => {}
+            Some(new_time) => {
+                self.last_reviewed = new_time;
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn sub_days(&mut self, num: u64) {
+        match self.last_reviewed.checked_sub_days(Days::new(num)) {
+            None => {}
+            Some(new_time) => {
+                self.last_reviewed = new_time;
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::topics::review_topics::{NextReviewGap, ReviewTopic};
+    use chrono::Utc;
 
     #[test]
     fn test_default_topic() {
@@ -68,11 +87,32 @@ mod tests {
 
     #[test]
     fn test_updating_review_gap() {
-        let review_topic: ReviewTopic = ReviewTopic::new(String::from("Review Topic Name"));
+        let mut review_topic: ReviewTopic = ReviewTopic::new(String::from("Review Topic Name"));
 
         assert_eq!(review_topic.next_review_gap, NextReviewGap::Day);
-        let review_topic = review_topic.review();
+        review_topic.review();
         assert_eq!(review_topic.next_review_gap, NextReviewGap::Week);
-        assert_eq!(review_topic.review().next_review_gap, NextReviewGap::Month);
+        review_topic.review();
+        assert_eq!(review_topic.next_review_gap, NextReviewGap::Month);
+    }
+
+    #[test]
+    fn test_changing_days() {
+        let mut review_topic: ReviewTopic = ReviewTopic::new("test_topic".to_string());
+
+        assert_eq!(
+            chrono::Utc::now().date_naive(),
+            review_topic.last_reviewed.date_naive()
+        );
+
+        review_topic.sub_days(1);
+
+        let delta_time = Utc::now().signed_duration_since(review_topic.last_reviewed);
+        assert_eq!(1, delta_time.num_days());
+
+        review_topic.add_days(1);
+
+        let delta_time = Utc::now().signed_duration_since(review_topic.last_reviewed);
+        assert_eq!(0, delta_time.num_days());
     }
 }
