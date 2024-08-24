@@ -1,4 +1,4 @@
-# spaced-interleaved-retrieval-tracker
+# revue
 
 A Cli tool to keep track of all the topics you learn and when you should go back and review them.
 
