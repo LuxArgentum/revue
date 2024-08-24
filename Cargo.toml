@@ -1,5 +1,5 @@
 [package]
-name = "spaced-interleaved-retrieval-tracker"
+name = "revue"
 version = "0.1.0"
 edition = "2021"
 
